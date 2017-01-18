@@ -148,7 +148,7 @@ int main(int argc, char **argv)
 
     while(ros::ok() && blocked)
     {
-		printf("vicon_xb waiting to get unlocked.\n");
+        printf("vicon_xb waiting to get unlocked.\n");
         ros::spinOnce();
         rate.sleep();
     }
@@ -239,7 +239,7 @@ int main(int argc, char **argv)
     {
         std::stringstream filename;
         filename << string(pw->pw_dir) << "/vicon_log/vclog" << fileIndx << ".m";
-		std::string ss = filename.str();
+        std::string ss = filename.str();
         viconLog.open(ss.c_str(), std::ofstream::out | std::ofstream::app);
         viconLog.precision(10);
         cout << "log_file: " << ss.c_str() << endl;
@@ -348,7 +348,7 @@ int main(int argc, char **argv)
                                 //publish to mocap/pose topic
                                 geometry_msgs::PoseStamped poseStamped;
                                 poseStamped.header.seq = seqCount++;
-                                poseStamped.header.stamp = viconPose.time_stamp;
+                                poseStamped.header.stamp = ros::Time::now();
                                 poseStamped.header.frame_id = "/local_frame";
                                 poseStamped.pose.position.x = viconPose.x;
                                 poseStamped.pose.position.y = viconPose.y;
@@ -386,7 +386,7 @@ int main(int argc, char **argv)
                                 viconLog << "X=[X " << VICON_MSG_X << "];Y=[Y " << VICON_MSG_Y <<"];Z=[Z " << VICON_MSG_Z <<"];"
                                          << "Xd=[Xd " << VICON_MSG_XD <<"];Yd=[Yd " << VICON_MSG_YD << "];Zd=[Zd " << VICON_MSG_ZD << "];"
                                          << "Ro=[Ro " << VICON_MSG_ROLL << "];Pi=[Pi " << VICON_MSG_PITCH <<"];Ya=[Ya " << VICON_MSG_YAW <<"];"
-                                         << "tv=[tv " << timeStamp.toSec() << "];" << "tvr=[tvr " << ros::Time::now() << "];" << endl;
+                                         << "tv=[tv " << ros::Time::now() << "];" << "tvr=[tvr " << ros::Time::now() << "];" << endl;
 
                             }
                         }
