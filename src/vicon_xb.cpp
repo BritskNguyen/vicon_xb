@@ -349,17 +349,18 @@ int main(int argc, char **argv)
                                 geometry_msgs::PoseStamped poseStamped;
                                 poseStamped.header.seq = seqCount++;
                                 poseStamped.header.stamp = ros::Time::now();
-                                poseStamped.header.frame_id = "/local_frame";
+                                poseStamped.header.frame_id = "/vicon_frame";
                                 poseStamped.pose.position.x = viconPose.x;
                                 poseStamped.pose.position.y = viconPose.y;
                                 poseStamped.pose.position.z = viconPose.z;
-                                tf::Quaternion qBL = tf::Quaternion(sin(viconPose.roll/2), 0, 0, cos(viconPose.roll/2))
+                                tf::Quaternion qV = tf::Quaternion(sin(viconPose.roll/2), 0, 0, cos(viconPose.roll/2))
                                                     *tf::Quaternion(0, sin(viconPose.pitch/2), 0, cos(viconPose.pitch/2))
                                                     *tf::Quaternion(0, 0, sin(viconPose.yaw/2), cos(viconPose.yaw/2));
-                                poseStamped.pose.orientation.x = qBL.x();
-                                poseStamped.pose.orientation.y = qBL.y();
-                                poseStamped.pose.orientation.z = qBL.z();
-                                poseStamped.pose.orientation.w = qBL.w();
+                                // tf::Quaternion qBL = tf::Quaternion(0, 0, -1/sqrt(2), 1/sqrt(2))*qV;
+                                poseStamped.pose.orientation.x = qV.x();
+                                poseStamped.pose.orientation.y = qV.y();
+                                poseStamped.pose.orientation.z = qV.z();
+                                poseStamped.pose.orientation.w = qV.w();
                                 viconMocapPublisher.publish(poseStamped);
 
 
@@ -370,7 +371,7 @@ int main(int argc, char **argv)
 
                                 viconPathMsg.header.seq = seqCount;
                                 viconPathMsg.header.stamp = ros::Time::now();
-                                viconPathMsg.header.frame_id = "/local_frame";
+                                viconPathMsg.header.frame_id = "/vicon_frame";
 
                                 viconPathMsg.poses = viconPath;
 
