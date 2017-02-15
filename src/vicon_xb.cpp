@@ -89,7 +89,6 @@ bool logEnable = false;
 bool publishEnable = true;
 std::ofstream viconLog;
 
-nav_msgs::Path viconPathMsg;
 std::vector<geometry_msgs::PoseStamped> viconPath;
 uint32_t viconPoseCount = 0;
 bool blocked = false;
@@ -161,7 +160,6 @@ int main(int argc, char **argv)
 
 
     ros::Publisher viconPosePublisher = viconXbeeNodeHandle.advertise<vicon_xb::viconPoseMsg>("viconPoseTopic", 1);
-    ros::Publisher viconMocapPublisher = viconXbeeNodeHandle.advertise<geometry_msgs::PoseStamped>("mocap/pose", 1);
 
     //-------------------------------Initialize Serial Connection---------------------------------
     fd.setPort(serialPortName);
@@ -332,54 +330,28 @@ int main(int argc, char **argv)
                             if(publishEnable)
                             {
                                 vicon_xb::viconPoseMsg viconPose;
+                                viconPose.header.seq = seqCount++;
+                                viconPose.header.stamp = ros::Time::now();
+                                viconPose.header.frame_id = "/vicon_frame";
+                                viconPose.pose.position.x = VICON_MSG_X;
+                                viconPose.pose.position.y = VICON_MSG_Y;
+                                viconPose.pose.position.z = VICON_MSG_Z;
+                                
+                                tf::Quaternion qV =  tf::Quaternion(sin(VICON_MSG_ROLL/2), 0, 0, cos(VICON_MSG_ROLL/2))
+                                                    *tf::Quaternion(0, sin(VICON_MSG_PITCH/2), 0, cos(VICON_MSG_PITCH/2))
+                                                    *tf::Quaternion(0, 0, sin(VICON_MSG_YAW/2), cos(VICON_MSG_YAW/2));
 
-                                viconPose.time_stamp = viconRosStartTimestamp + timeStamp;
-                                viconPose.x = VICON_MSG_X;
-                                viconPose.y = VICON_MSG_Y;
-                                viconPose.z = VICON_MSG_Z;
-                                viconPose.dx = VICON_MSG_XD;
-                                viconPose.dy = VICON_MSG_YD;
-                                viconPose.dz = VICON_MSG_ZD;
-                                viconPose.roll = VICON_MSG_ROLL;
-                                viconPose.pitch = VICON_MSG_PITCH;
-                                viconPose.yaw = VICON_MSG_YAW;
+                                viconPose.pose.orientation.x = qV.x();
+                                viconPose.pose.orientation.y = qV.y();
+                                viconPose.pose.orientation.z = qV.z();
+                                viconPose.pose.orientation.w = qV.w();
+
+                                viconPose.vel.x = VICON_MSG_XD;
+                                viconPose.vel.y = VICON_MSG_YD;
+                                viconPose.vel.z = VICON_MSG_ZD;
+
                                 viconPosePublisher.publish(viconPose);
 
-                                //publish to mocap/pose topic
-                                geometry_msgs::PoseStamped poseStamped;
-                                poseStamped.header.seq = seqCount++;
-                                poseStamped.header.stamp = ros::Time::now();
-                                poseStamped.header.frame_id = "/vicon_frame";
-                                poseStamped.pose.position.x = viconPose.x;
-                                poseStamped.pose.position.y = viconPose.y;
-                                poseStamped.pose.position.z = viconPose.z;
-                                tf::Quaternion qV = tf::Quaternion(sin(viconPose.roll/2), 0, 0, cos(viconPose.roll/2))
-                                                    *tf::Quaternion(0, sin(viconPose.pitch/2), 0, cos(viconPose.pitch/2))
-                                                    *tf::Quaternion(0, 0, sin(viconPose.yaw/2), cos(viconPose.yaw/2));
-                                // tf::Quaternion qBL = tf::Quaternion(0, 0, -1/sqrt(2), 1/sqrt(2))*qV;
-                                poseStamped.pose.orientation.x = qV.x();
-                                poseStamped.pose.orientation.y = qV.y();
-                                poseStamped.pose.orientation.z = qV.z();
-                                poseStamped.pose.orientation.w = qV.w();
-                                viconMocapPublisher.publish(poseStamped);
-
-
-                                if(viconPath.size() > 10000)
-                                    viconPath.clear();
-
-                                viconPath.push_back(poseStamped);
-
-                                viconPathMsg.header.seq = seqCount;
-                                viconPathMsg.header.stamp = ros::Time::now();
-                                viconPathMsg.header.frame_id = "/vicon_frame";
-
-                                viconPathMsg.poses = viconPath;
-
-                                if(publishEnable)
-                                {
-                                    printf("Array size:%d\n", viconPath.size());
-                                    viconPathPublisher.publish(viconPathMsg);
-                                }
                             }
 
                             if(logEnable)
