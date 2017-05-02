@@ -89,7 +89,6 @@ bool logEnable = false;
 bool publishEnable = true;
 std::ofstream viconLog;
 
-std::vector<geometry_msgs::PoseStamped> viconPath;
 uint32_t viconPoseCount = 0;
 bool blocked = false;
 int fileIndx = -1;
@@ -110,9 +109,6 @@ int main(int argc, char **argv)
     //Create ros handler to node
     ros::init(argc, argv, "viconXbeeNodeHandle");
     ros::NodeHandle viconXbeeNodeHandle("~");
-
-    //vicon path vizualization
-    ros::Publisher viconPathPublisher = viconXbeeNodeHandle.advertise<nav_msgs::Path>("vicon/path", 1);
 
     string serialPortName = string(DFLT_PORT);
     if(viconXbeeNodeHandle.getParam("viconSerialPort", serialPortName))
@@ -158,6 +154,12 @@ int main(int argc, char **argv)
     else
         printf(KYEL "Couldn't retrieve param 'viconCommTimeout', applying default value %dms\n"RESET, viconCommTimeout);
 
+    bool pollPort = true;
+    if(viconXbeeNodeHandle.getParam("viconCommTimeout", viconCommTimeout))
+        printf(KBLU"Retrieved value %d [ms] for param 'viconCommTimeout'\n"RESET, viconCommTimeout);
+    else
+        printf(KYEL "Couldn't retrieve param 'viconCommTimeout', applying default value %dms\n"RESET, viconCommTimeout);
+
 
     ros::Publisher viconPosePublisher = viconXbeeNodeHandle.advertise<vicon_xb::viconPoseMsg>("viconPoseTopic", 1);
 
@@ -173,8 +175,12 @@ int main(int argc, char **argv)
     }
     else
     {
-        printf(KRED "serialInit: Failed to open port %s\n" RESET, serialPortName.data());
-        return 0;
+        if (pollPort)
+            while(ros::ok())
+            {
+                printf(KRED "serialInit: Failed to open port %s..\n" RESET, serialPortName.data());
+                ros::Duration(0.25).sleep();            
+            }
     }
     //Looping to catch the intial of frame
     if( synchronize(rate, viconCommTimeout/1000.0) < 0)
@@ -349,6 +355,10 @@ int main(int argc, char **argv)
                                 viconPose.vel.x = VICON_MSG_XD;
                                 viconPose.vel.y = VICON_MSG_YD;
                                 viconPose.vel.z = VICON_MSG_ZD;
+
+                                viconPose.eulers.x = VICON_MSG_ROLL;
+                                viconPose.eulers.y = VICON_MSG_PITCH;
+                                viconPose.eulers.z = VICON_MSG_YAW;
 
                                 viconPosePublisher.publish(viconPose);
 

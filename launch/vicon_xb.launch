@@ -10,6 +10,9 @@
 	<param name="logEnable" type="bool" value="false"/>
 	<param name="blocked" type="bool" value="false"/>
 	<param name="publishEnable" type="bool" value="true"/>
+
+	<param name="pollPort" type="bool" value="true"/>
+
   </node>
   
   <include file="$(find vicon_xb)/launch/vicon_local_tf.launch"/>
