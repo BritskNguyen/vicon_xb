@@ -36,6 +36,7 @@
 //For log file use
 #include <fstream>
 #include <pwd.h>
+#include <glob.h>   //To search for port
 
 //#include <mavros/Imu.h>
 
@@ -164,6 +165,13 @@ int main(int argc, char **argv)
     ros::Publisher viconPosePublisher = viconXbeeNodeHandle.advertise<vicon_xb::viconPoseMsg>("viconPoseTopic", 1);
 
     //-------------------------------Initialize Serial Connection---------------------------------
+    glob_t glob_results;
+    while(glob(serialPortName.c_str(), 0, NULL, &glob_results) == GLOB_NOMATCH)
+    {
+        printf("Port \"%s\" not found! Checking after 0.5s\n"RESET, serialPortName.data());
+        ros::Duration(0.5).sleep();
+    }
+
     fd.setPort(serialPortName);
     fd.setBaudrate(BAUDRATE);
     fd.setTimeout(5, 10, 0, 10, 0);
@@ -175,13 +183,10 @@ int main(int argc, char **argv)
     }
     else
     {
-        if (pollPort)
-            while(ros::ok())
-            {
-                printf(KRED "serialInit: Failed to open port %s..\n" RESET, serialPortName.data());
-                ros::Duration(0.25).sleep();            
-            }
+        printf(KRED "serialInit: Failed to open port %s..\n" RESET, serialPortName.data());
+        ros::Duration(0.25).sleep();
     }
+
     //Looping to catch the intial of frame
     if( synchronize(rate, viconCommTimeout/1000.0) < 0)
     {
