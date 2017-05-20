@@ -188,11 +188,8 @@ int main(int argc, char **argv)
     }
 
     //Looping to catch the intial of frame
-    if( synchronize(rate, viconCommTimeout/1000.0) < 0)
-    {
-        printf("Timeout synchronizing with stream. Exitting!");
-        exit(1);
-    }
+    while( synchronize(rate, viconCommTimeout/1000.0) < 0)
+        printf("Timeout synchronizing with stream.");
     //-----------------------------------Serial Initialization-------------------------------------//
 
     //---------------------------------------Logging & Publish configuration-------------------------------------------//
@@ -274,8 +271,6 @@ int main(int argc, char **argv)
             if(bytes_avail >= RCV_THRESHOLD)
                 while(fd.available() >= RCV_THRESHOLD)
                 {
-                    lastMsgTime = ros::Time::now();
-
                     fd.read(rcvdFrame, RCV_THRESHOLD);
                     //Since intial synchronization, first 4 bytes must be headers otherwise there must have been an error
                     uint32_t headerWord = VICON_MSG_HDR;
@@ -284,20 +279,22 @@ int main(int argc, char **argv)
                         //If there is some error, call the synchronize procedure
                         printf("Lost synchronization. Attempting to synchronize back.\n");
                         if( synchronize(rate, viconCommTimeout/1000.0) < 0)
+                            printf("Timeout synchronizing with stream. OMG!");
+                        else
                         {
-                            printf("Timeout synchronizing with stream. Exitting!");
-                            exit(1);
+                            printf("Synchronization recovered.\n");
+                            lastMsgTime = ros::Time::now();
                         }
-                        printf("Synchronization recovered.\n");
-
                     }
                     else
                     {
+                        lastMsgTime = ros::Time::now();
+
                         //All things are good so far
                         printf(KBLU"Aligned Header found, "RESET);
-//                        for(int i = 0; i < RCV_THRESHOLD; i++)
-//                            printf(KGRN"%2x ", rcvdFrame[i]);
-//                        printf("\n"RESET);
+                       // for(int i = 0; i < RCV_THRESHOLD; i++)
+                       //     printf(KGRN"%2x ", rcvdFrame[i]);
+                       // printf("\n"RESET);
 
                         //Checksum
                         bool validCRC = false;
@@ -405,10 +402,7 @@ int synchronize(ros::Rate rate, double timeOut)
         printf("Bytes in buffer%d\n", bytes_avail);
 
         if(bytes_avail < RCV_THRESHOLD*2)
-        {
             rate.sleep();
-            continue;
-        }
         else
         {
             //dummy read to clean up the buffer
